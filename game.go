@@ -20,3 +20,12 @@ type Game struct {
 	Winner    Player
 	MoveCount int
 }
+
+func NewGame() *Game {
+	return &Game{
+		Current:   Player1,
+		GameOver:  false,
+		Winner:    Empty,
+		MoveCount: 0,
+	}
+}
