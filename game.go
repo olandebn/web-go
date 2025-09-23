@@ -29,3 +29,13 @@ func NewGame() *Game {
 		MoveCount: 0,
 	}
 }
+
+func (g *Game) PlayMove(col int) bool {
+	if g.GameOver || col < 0 || col >= Columns {
+		return false
+	}
+	for row := Rows - 1; row >= 0; row-- {
+		if g.Grid[row][col] == Empty {
+		}
+	}
+}
