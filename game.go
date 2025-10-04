@@ -36,6 +36,12 @@ func (g *Game) PlayMove(col int) bool {
 	}
 	for row := Rows - 1; row >= 0; row-- {
 		if g.Grid[row][col] == Empty {
+			g.Grid[row][col] = g.Current
+			g.MoveCount++
+			// Tu peux ajouter ici la logique pour vérifier la victoire
+			// et changer le joueur courant
+			return true
 		}
 	}
+	return false // Si la colonne est pleine
 }
