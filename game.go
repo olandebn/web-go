@@ -7,12 +7,6 @@ const (
 
 type Player int
 
-const (
-	Empty Player = iota
-	Player1
-	Player2
-)
-
 type Game struct {
 	Grid      [Rows][Columns]Player
 	Current   Player
