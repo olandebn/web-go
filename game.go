@@ -1,19 +1,10 @@
 package main
 
 const (
-<<<<<<< HEAD
 	Rows = 6
 	Cols = 7
 )
 
-=======
-	Rows    = 6
-	Columns = 7
-)
-
-type Player int
-
->>>>>>> f929d2fa7a1d680b580c89f3dbea47848d3eeb63
 type Game struct {
 	Board         [][]int
 	CurrentPlayer int
