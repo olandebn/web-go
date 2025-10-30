@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Puissance 4</title>
+<style>
+:root {
+  --bg:#f3f4f6;
+  --panel:#fff;
+  --btn-color:#003366;
+  --p1:#8B0000;
+  --p2:#f8db1b;
+  --cell:#e5e7eb;
+  --text:#1f2937;
+  --shadow:0 4px 20px rgba(0,0,0,0.08);
+  --radius:14px;
+}
+html,body{
+  margin:0;
+  font-family:Inter,sans-serif;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--bg);
+  color:var(--text);
+}
+.container{
+  background:var(--panel);
+  padding:40px;
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  text-align:center;
+  max-width:800px;
+  width:90%;
+}
+
+/* Boutons avec animation */
+.btn{
+  display:block;
+  width:200px;
+  margin:10px auto;
+  padding:12px 0;
+  border:none;
+  border-radius:10px;
+  background-color:var(--btn-color);
+  color:#fff;
+  font-size:18px;
+  text-decoration:none;
+  cursor:pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.2s ease;
+}
+.btn:hover { filter:brightness(1.1); }
+.btn:active { transform: scale(0.95); box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+
+/* Plateau */
+.grid-inner{ display:grid; grid-template-columns:repeat(7,1fr); gap:10px; background:#e2e8f0; border-radius:12px; padding:14px; margin-top:20px; }
+.cell{ width:80px; height:80px; border-radius:50%; background:var(--cell); display:flex; align-items:center; justify-content:center; box-shadow:inset 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.1s ease; }
+.cell:active{ transform: scale(0.95); }
+.disc{ width:70px; height:70px; border-radius:50%; opacity:0; transform: translateY(-50px); transition: transform 0.3s cubic-bezier(.2,.9,.2,1), opacity 0.3s ease; }
+.cell.filled .disc{ opacity:1; transform: translateY(0); }
+.disc.p1{ background-color:var(--p1); border:3px solid #5c0000; box-shadow: inset 0 4px 6px rgba(255,255,255,0.3), inset 0 -4px 6px rgba(0,0,0,0.4), 0 3px 6px rgba(0,0,0,0.3); }
+.disc.p2{ background-color:var(--p2); border:3px solid #9C8C11; box-shadow: inset 0 4px 6px rgba(255,255,255,0.3), inset 0 -4px 6px rgba(0,0,0,0.4), 0 3px 6px rgba(0,0,0,0.3); }
+
+/* Section Informations */
+.info-container{ display:flex; flex-wrap:wrap; justify-content:center; gap:30px; margin-top:20px; }
+.info-person{ display:flex; flex-direction:column; align-items:center; gap:10px; max-width:250px; text-align:center; }
+.info-person img{ width:120px; height:120px; border-radius:50%; object-fit:cover; }
+.info-text{ text-align:center; }
+
+/* Bandeau bas */
+.footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background-color: var(--btn-color);
+  color: #fff;
+  text-align: center;
+  padding: 8px 0;
+  font-size: 14px;
+  box-shadow: 0 -2px 4px rgba(0,0,0,0.2);
+}
+
+@media(max-width:600px){
+  .grid-inner{ grid-template-columns:repeat(4,1fr); }
+  .info-container{ flex-direction:column; align-items:center; }
+  .info-person{ max-width:90%; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+{{if eq .View "menu"}}
+<h1>Puissance 4</h1>
+<form method="post" action="/start"><button class="btn" type="submit">Jouer</button></form>
+<form method="get" action="/rules"><button class="btn" type="submit">Règles</button></form>
+<form method="get" action="/history"><button class="btn" type="submit">Historique des parties</button></form>
+<form method="get" action="/info"><button class="btn" type="submit">Informations</button></form>
+
+{{else if eq .View "regles"}}
+<h2>Règles du Puissance 4</h2>
+<p>Deux joueurs jouent à tour de rôle pour placer un jeton dans une colonne. Le premier à aligner 4 jetons horizontalement, verticalement ou en diagonale gagne.</p>
+<form method="post" action="/reset"><button class="btn" type="submit">Retour au menu</button></form>
+
+{{else if eq .View "info"}}
+<h2>Informations sur le projet</h2>
+<p>Projet scolaire B1 Informatique réalisé par deux étudiants : Ilian et Olan.</p>
+<p>Ci-dessous leurs présentations et rôles dans le projet :</p>
+
+<div class="info-container">
+  <div class="info-person">
+    <img src="/images/ilian.jpg" alt="Photo Ilian">
+    <div class="info-text">
+      <strong>Ilian</strong><br>
+      Rôle : Développement backend et logique du jeu.<br>
+      (Ajouter une description courte)
+    </div>
+  </div>
+  <div class="info-person">
+    <img src="/images/olan.jpg" alt="Photo Olan">
+    <div class="info-text">
+      <strong>Olan</strong><br>
+      Rôle : Frontend et intégration HTML/CSS.<br>
+      (Ajouter une description courte)
+    </div>
+  </div>
+</div>
+<form method="post" action="/reset"><button class="btn" type="submit">Retour au menu</button></form>
+
+{{else if eq .View "jeu"}}
+<h2>Plateau de jeu</h2>
+<div class="grid-inner">
+{{range $rIndex, $row := .Board}}
+  {{range $cIndex, $cell := $row}}
+  <form method="post" action="/play" style="display:inline-block;margin:0">
+    <input type="hidden" name="col" value="{{$cIndex}}">
+    <button type="submit" style="all:unset;display:flex;align-items:center;justify-content:center;">
+      <div class="cell {{if ne $cell 0}}filled{{end}}">
+        {{if eq $cell 1}}<div class="disc p1"></div>
+        {{else if eq $cell 2}}<div class="disc p2"></div>
+        {{else}}<div class="disc"></div>{{end}}
+      </div>
+    </button>
+  </form>
+  {{end}}
+{{end}}
+</div>
+<form method="post" action="/reset"><button class="btn" type="submit">Nouvelle partie</button></form>
+<form method="post" action="/reset"><button class="btn" type="submit">Retour au menu</button></form>
+
+{{else if eq .View "victory"}}
+<h2>Le joueur {{.Winner}} a gagné !</h2>
+<form method="post" action="/reset"><button class="btn" type="submit">Nouvelle partie</button></form>
+<form method="post" action="/reset"><button class="btn" type="submit">Retour au menu</button></form>
+
+{{else if eq .View "historique"}}
+<h2>Historique des parties</h2>
+{{if .History}}
+<ul>
+{{range .History}}<li>{{.}}</li>{{end}}
+</ul>
+{{else}}
+<p>Aucune partie jouée pour le moment.</p>
+{{end}}
+<form method="post" action="/reset"><button class="btn" type="submit">Retour au menu</button></form>
+
+{{end}}
+
+</div>
+
+<div class="footer">
+  Projet puissance 4, Ilian BRIKI et Olan DEBRUYNE 2025©
+</div>
+
+<script>
+window.addEventListener('load', () => {
+  document.querySelectorAll('.cell .disc').forEach((d,i)=>{setTimeout(()=>d.style.opacity='1',i*30);});
+});
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+package main
+
+const (
+	Rows = 6
+	Cols = 7
+)
+
+type Game struct {
+	Board         [][]int
+	CurrentPlayer int
+	TurnCount     int
+	Winner        int
+	WinningCells  map[[2]int]bool
+}
+
+// Nouvelle partie vide
+func NewGame() *Game {
+	board := make([][]int, Rows)
+	for i := range board {
+		board[i] = make([]int, Cols)
+	}
+	return &Game{
+		Board:         board,
+		CurrentPlayer: 1,
+		WinningCells:  make(map[[2]int]bool),
+	}
+}
+
+// Jouer un coup
+func (g *Game) Play(col int) bool {
+	if col < 0 || col >= Cols || g.Winner != 0 {
+		return false
+	}
+	for row := Rows - 1; row >= 0; row-- {
+		if g.Board[row][col] == 0 {
+			g.Board[row][col] = g.CurrentPlayer
+			g.TurnCount++
+			if g.checkWin(row, col, g.CurrentPlayer) {
+				g.Winner = g.CurrentPlayer
+			} else {
+				g.switchPlayer()
+			}
+			return true
+		}
+	}
+	return false
+}
+
+func (g *Game) switchPlayer() {
+	if g.CurrentPlayer == 1 {
+		g.CurrentPlayer = 2
+	} else {
+		g.CurrentPlayer = 1
+	}
+}
+
+// Vérification victoire
+func (g *Game) checkWin(row, col, player int) bool {
+	dirs := [][2]int{{1, 0}, {0, 1}, {1, 1}, {1, -1}}
+	for _, d := range dirs {
+		count := 1
+		for i := 1; i < 4; i++ {
+			r, c := row+d[0]*i, col+d[1]*i
+			if r < 0 || r >= Rows || c < 0 || c >= Cols || g.Board[r][c] != player {
+				break
+			}
+			count++
+		}
+		for i := 1; i < 4; i++ {
+			r, c := row-d[0]*i, col-d[1]*i
+			if r < 0 || r >= Rows || c < 0 || c >= Cols || g.Board[r][c] != player {
+				break
+			}
+			count++
+		}
+		if count >= 4 {
+			for i := -3; i <= 3; i++ {
+				r, c := row+d[0]*i, col+d[1]*i
+				if r >= 0 && r < Rows && c >= 0 && c < Cols && g.Board[r][c] == player {
+					g.WinningCells[[2]int{r, c}] = true
+				}
+			}
+			return true
+		}
+	}
+	return false
+}
+
+// Réinitialiser
+func (g *Game) Reset() {
+	for i := range g.Board {
+		for j := range g.Board[i] {
+			g.Board[i][j] = 0
+		}
+	}
+	g.CurrentPlayer = 1
+	g.TurnCount = 0
+	g.Winner = 0
+	g.WinningCells = make(map[[2]int]bool)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+package main
+
+import (
+	"fmt"
+	"html/template"
+	"net/http"
+	"os"
+	"sync"
+)
+
+var (
+	mu      sync.Mutex
+	game    *Game
+	tmpl    *template.Template
+	history []string
+)
+
+func main() {
+	game = NewGame()
+
+	// Charger le template
+	tmpl = template.Must(template.New("index.html").Funcs(template.FuncMap{
+		"isWinningCell": func(r, c int) bool {
+			return game.WinningCells[[2]int{r, c}]
+		},
+	}).ParseFiles("templates/index.html"))
+
+	// Charger l'historique depuis fichier
+	loadHistory()
+
+	// Servir les images statiques
+	http.Handle("/images/", http.StripPrefix("/images/", http.FileServer(http.Dir("images"))))
+
+	http.HandleFunc("/", handleMenu)
+	http.HandleFunc("/start", handleStart)
+	http.HandleFunc("/rules", handleRules)
+	http.HandleFunc("/info", handleInfo)
+	http.HandleFunc("/history", handleHistory)
+	http.HandleFunc("/play", handlePlay)
+	http.HandleFunc("/reset", handleReset)
+
+	fmt.Println("Serveur en cours sur http://localhost:8080 ...")
+	http.ListenAndServe(":8080", nil)
+}
+
+func handleMenu(w http.ResponseWriter, r *http.Request) {
+	render(w, "menu")
+}
+
+func handleStart(w http.ResponseWriter, r *http.Request) {
+	mu.Lock()
+	game.Reset()
+	mu.Unlock()
+	render(w, "jeu")
+}
+
+func handleRules(w http.ResponseWriter, r *http.Request) {
+	render(w, "regles")
+}
+
+func handleInfo(w http.ResponseWriter, r *http.Request) {
+	render(w, "info")
+}
+
+func handleHistory(w http.ResponseWriter, r *http.Request) {
+	render(w, "historique")
+}
+
+func handlePlay(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	col := r.FormValue("col")
+	var c int
+	fmt.Sscanf(col, "%d", &c)
+
+	mu.Lock()
+	if game.Play(c) && game.Winner != 0 {
+		// Ajouter dans l'historique
+		entry := fmt.Sprintf("Joueur %d a gagné après %d tours", game.Winner, game.TurnCount)
+		history = append(history, entry)
+		saveHistory()
+	}
+	mu.Unlock()
+
+	if game.Winner != 0 {
+		render(w, "victory")
+		return
+	}
+
+	render(w, "jeu")
+}
+
+func handleReset(w http.ResponseWriter, r *http.Request) {
+	mu.Lock()
+	game.Reset()
+	mu.Unlock()
+	render(w, "menu")
+}
+
+func render(w http.ResponseWriter, view string) {
+	mu.Lock()
+	defer mu.Unlock()
+	data := map[string]interface{}{
+		"View":          view,
+		"Board":         game.Board,
+		"Winner":        game.Winner,
+		"CurrentPlayer": game.CurrentPlayer,
+		"History":       history,
+	}
+	tmpl.ExecuteTemplate(w, "index.html", data)
+}
+
+// --- Historique ---
+func loadHistory() {
+	f, err := os.Open("history.txt")
+	if err != nil {
+		history = []string{}
+		return
+	}
+	defer f.Close()
+
+	var lines []string
+	buf := make([]byte, 1024)
+	for {
+		n, err := f.Read(buf)
+		if n > 0 {
+			lines = append(lines, string(buf[:n]))
+		}
+		if err != nil {
+			break
+		}
+	}
+
+	history = []string{}
+	for _, line := range lines {
+		for _, l := range splitLines(line) {
+			if l != "" {
+				history = append(history, l)
+			}
+		}
+	}
+}
+
+func saveHistory() {
+	f, err := os.Create("history.txt")
+	if err != nil {
+		fmt.Println("Erreur lors de l'écriture de l'historique :", err)
+		return
+	}
+	defer f.Close()
+	for _, h := range history {
+		fmt.Fprintln(f, h)
+	}
+}
+
+// Helper pour découper par lignes
+func splitLines(s string) []string {
+	lines := []string{}
+	start := 0
+	for i, c := range s {
+		if c == '\n' || c == '\r' {
+			lines = append(lines, s[start:i])
+			start = i + 1
+		}
+	}
+	if start < len(s) {
+		lines = append(lines, s[start:])
+	}
+	return lines
+}
