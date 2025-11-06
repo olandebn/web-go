@@ -1,4 +1,4 @@
-package pisicne
+package main
 
 import (
 	"fmt"
