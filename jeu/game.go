@@ -98,5 +98,3 @@ func (g *Game) Reset() {
 	g.Winner = 0
 	g.WinningCells = make(map[[2]int]bool)
 }
-
-qsldqjdoqskjd
